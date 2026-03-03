@@ -1,18 +1,19 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>BlueBubbles Proxy - Test Page</title>
-  <style>
-    body { font-family: system-ui; background: #1a1a2e; color: #e0e0e0; margin:0; height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; }
-    h1 { font-size: 3rem; color: #00d4ff; }
-    p { font-size: 1.3rem; max-width: 600px; }
-  </style>
-</head>
-<body>
-  <h1>BlueBubbles Proxy 已部署！</h1>
-  <p>這是使用命令行部署到 Cloudflare Pages 的測試頁面。</p>
-  <p>serverUrl: https://你的專案名.pages.dev</p>
-</body>
-</html>
+addEventListener('fetch', event => {
+  event.respondWith(handleRequest(event.request))
+})
+
+async function handleRequest(request) {
+  const url = new URL(request.url);
+  const target = 'http://localhost:1234' + url.pathname + url.search;  // 转发到本地端口 1234
+
+  // 复制请求头、方法、body
+  const init = {
+    method: request.method,
+    headers: request.headers,
+    redirect: 'manual'
+  };
+  if (request.body) init.body = request.body;
+
+  // 发送到本地 BlueBubbles
+  return fetch(target, init);
+}
