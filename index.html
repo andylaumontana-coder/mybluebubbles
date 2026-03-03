@@ -1,17 +1,33 @@
 addEventListener('fetch', event => {
-  event.respondWith(handleRequest(event.request))
-})
+  event.respondWith(handleRequest(event.request));
+});
 
 async function handleRequest(request) {
   const url = new URL(request.url);
   const target = 'http://localhost:1234' + url.pathname + url.search;
 
+  const headers = new Headers(request.headers);
+  headers.set('Host', 'localhost:1234');
+  headers.set('X-Forwarded-For', '127.0.0.1'); // 模拟本地 IP
+
   const init = {
     method: request.method,
-    headers: request.headers,
+    headers: headers,
+    body: request.body,
     redirect: 'manual'
   };
-  if (request.body) init.body = request.body;
 
-  return fetch(target, init);
+  try {
+    const response = await fetch(target, init);
+    const body = await response.text();
+    return new Response(
+      `Target URL: ${target}\n` +
+      `Status: ${response.status}\n` +
+      `Headers from BlueBubbles: ${JSON.stringify([...response.headers])}\n\n` +
+      `Body:\n${body}`,
+      { status: response.status, headers: { 'Content-Type': 'text/plain' } }
+    );
+  } catch (e) {
+    return new Response(`Proxy error: ${e.message}\nTarget: ${target}`, { status: 502 });
+  }
 }
